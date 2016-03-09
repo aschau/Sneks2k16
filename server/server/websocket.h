@@ -12,6 +12,7 @@
 #include <vector>
 #include <map>
 #include <time.h>
+#include <queue>
 
 using namespace std;
 
@@ -98,6 +99,19 @@ public:
     void wsClose(int clientID);
     vector<int> getClientIDs();
     string getClientIP(int clientID);
+
+	string id1;
+	string id2;
+	//string p1score;
+	//string p2score;
+	//string p1wins;
+	//string p2wins;
+	//string ties;
+	//string pickup;
+	//string p1start;
+	//string p2start;
+	deque<pair<string, int>> messages;
+
 private:
     vector<wsClient *> wsClients;
     map<int, int> socketIDmap;

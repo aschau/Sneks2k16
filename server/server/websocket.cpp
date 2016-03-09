@@ -706,6 +706,7 @@ void webSocket::startServer(int port){
 
     struct timeval timeout;
     time_t nextPingTime = time(NULL) + 1;
+	int time_passed = 0;
     while (FD_ISSET(listenfd, &fds)){
         read_fds = fds;
         timeout.tv_sec = 0;
@@ -718,31 +719,42 @@ void webSocket::startServer(int port){
                         int newfd = accept(listenfd, (struct sockaddr*)&cli_addr, &addrlen);
                         if (newfd != -1){
                             /* add new client */
-							for (int i = 0; i < wsClients.size(); i++)
-							{
-								printf(wsClients[i].addr);
-								printf(cli_addr.sin_addr);
-								if (wsClients[i].addr == cli_addr.sin_addr)
-								{
-									return
-								}
-							}
-							
+			//				bool taken = false;
+			//				for (int i = 0; i < wsClients.size(); i++)
+			//				{
+			///*					printf(wsClients[i].addr);
+			//					printf(cli_addr.sin_addr);*/
+			//					if (wsClients[i]->addr.S_un.S_addr == in_addr(cli_addr.sin_addr).S_un.S_addr)
+			//					{
+			//						taken = true;
+			//						//wsSendClientMessage(i, WS_OPCODE_TEXT, "Snakes occupied.");
+			//					}
+			//				}
+
+						/*	if (!taken)
+							{*/
 							wsAddClient(newfd, cli_addr.sin_addr);
 							printf("New connection from %s on socket %d\n", inet_ntoa(cli_addr.sin_addr), newfd);
-
+							//}
                         }
                     }
                     else {
                         int nbytes = recv(i, buf, sizeof(buf), 0);
-                        if (socketIDmap.find(i) != socketIDmap.end()){
-                            if (nbytes < 0)
-                                wsSendClientClose(socketIDmap[i], WS_STATUS_PROTOCOL_ERROR);
-                            else if (nbytes == 0)
-                                wsRemoveClient(socketIDmap[i]);
+						if (socketIDmap.find(i) != socketIDmap.end()){
+							if (nbytes < 0)
+							{
+								wsSendClientClose(socketIDmap[i], WS_STATUS_PROTOCOL_ERROR);
+							}
+							else if (nbytes == 0)
+							{
+
+								wsRemoveClient(socketIDmap[i]);
+							}
                             else {
-                                if (!wsProcessClient(socketIDmap[i], buf, nbytes))
-                                    wsSendClientClose(socketIDmap[i], WS_STATUS_PROTOCOL_ERROR);
+								if (!wsProcessClient(socketIDmap[i], buf, nbytes))
+								{
+									wsSendClientClose(socketIDmap[i], WS_STATUS_PROTOCOL_ERROR);
+								}
                             }
                         }
                     }
