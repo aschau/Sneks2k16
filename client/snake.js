@@ -70,7 +70,8 @@ var grid =
 //snek 1 = player 1 = clientid 0
 var snake = 
 {
-	direction: null,
+    direction: null,
+    pdirection: null,
 	last: null,
 	_queue: null,
 	
@@ -96,7 +97,8 @@ var snake =
 //snek2 = player 2 = clientid 1
 var snake2 = 
 {
-	direction: null,
+    direction: null,
+    pdirection: null,
 	last: null,
 	_queue: null,
 	
@@ -280,6 +282,7 @@ function update()
 	//moves for client0
 	if (clientid == 0)
 	{
+	    snake.pdirection = snake.direction;
 		if (keystate[KEY_LEFT] && snake.direction !== RIGHT)
 		{
 			snake.direction = LEFT;
@@ -301,6 +304,7 @@ function update()
 	//moves for client1
 	else
 	{
+	    snake2.pdirection = snake2.direction;
 		if (keystate[KEY_LEFT] && snake2.direction !== RIGHT)
 		{
 			snake2.direction = LEFT;
@@ -398,13 +402,16 @@ function update()
 			{
 				var tail = snake.remove();
 				grid.set(EMPTY, tail.x, tail.y);
-				Server.send('message', "Empty: " + tail.x + ", " + tail.y)
+				//Server.send('message', "Empty: " + tail.x + ", " + tail.y)
 				tail.x = nx;
 				tail.y = ny;
 			}
 			
-			//send new location to other client
-			Server.send('message', "Snake 1 Tail: " + tail.x + ", " + tail.y + ": " + snake.direction + ": " + snake.last.x + ", " + snake.last.y);
+		    //send new location to other client
+			if (snake.direction != snake.pdirection)
+			{
+			    Server.send('message', "Snake 1 Tail: " + tail.x + ", " + tail.y + ": " + snake.direction + ": " + snake.last.x + ", " + snake.last.y);
+			}
 			grid.set(SNAKE, tail.x, tail.y);
 			snake.insert(tail.x, tail.y);
 			
@@ -422,14 +429,14 @@ function update()
 			//only need to make it look like the other client is still moving
 			//keeps client from teleporting around
 			//this is basically how our extrapolation works/latency mitigation
-			for (var i = 0; i < snake2._queue.length; i++)
-			{
-			    grid.set(SNAKE2, snake2._queue[i].x, snake2._queue[i].y);
-			}
+			//for (var i = 0; i < snake2._queue.length; i++)
+			//{
+			//    grid.set(SNAKE2, snake2._queue[i].x, snake2._queue[i].y);
+			//}
 
 			var nx2 = snake2.last.x;
 			var ny2 = snake2.last.y;
-				
+			
 			switch(snake2.direction)
 			{
 				case LEFT:
@@ -445,13 +452,23 @@ function update()
 					ny2++;
 					break;
 			}
-			if (!(nx2 > grid.width-1 || ny2 > grid.height || ny2 < 0 || nx2 < 0))
+
+			if (!(nx2 > grid.width-1 || ny2 > grid.height-1 || ny2 < 0 || nx2 < 0))
 			{
 				var tail2 = snake2.remove();
 				grid.set(EMPTY, tail2.x, tail2.y);
 				tail2.x = nx2;
 				tail2.y = ny2;
-				grid.set(SNAKE2, tail2.x, tail2.y);
+
+				if (grid.get(nx2, ny2) == PICKUP)
+				{
+				    grid.set(PICKUP, nx2, ny2);
+				}
+				else
+				{
+				    grid.set(SNAKE2, tail2.x, tail2.y);
+				}
+
 				snake2.insert(tail2.x, tail2.y);
 			}
 		}
@@ -520,24 +537,18 @@ function update()
 			else
 			{
 				var tail2 = snake2.remove();
-				Server.send('message', "Empty: " + tail2.x + ", " + tail2.y)
+				//Server.send('message', "Empty: " + tail2.x + ", " + tail2.y)
 				grid.set(EMPTY, tail2.x, tail2.y);
 				tail2.x = nx2;
 				tail2.y = ny2;
 			}
 			
-			Server.send('message', "Snake 2 Tail: " + tail2.x + ", " + tail2.y + ": " + snake2.direction + ": " + snake2.last.x + ", " + snake2.last.y);
+			if (snake2.direction != snake2.pdirection)
+			{
+			    Server.send('message', "Snake 2 Tail: " + tail2.x + ", " + tail2.y + ": " + snake2.direction + ": " + snake2.last.x + ", " + snake2.last.y);
+			}
 			grid.set(SNAKE2, tail2.x, tail2.y);
 			snake2.insert(tail2.x, tail2.y);
-			
-			//for (var i = 0; i < snake2._queue.length; i++)
-			//{
-			//    Server.send('message', "Snake 2 Child: " + snake2._queue[i].x + ", " + snake2._queue[i].y)
-			//}
-			for (var i = 0; i < snake._queue.length; i++)
-			{
-			    grid.set(SNAKE, snake._queue[i].x, snake._queue[i].y);
-			}
 
 			var nx = snake.last.x;
 			var ny = snake.last.y;
@@ -558,13 +569,21 @@ function update()
 					break;
 			}
 				
-			if (!(nx > grid.width-1 || ny > grid.height || ny < 0 || nx < 0))
+			if (!(nx > grid.width-1 || ny > grid.height-1 || ny < 0 || nx < 0))
 			{
 			    var tail = snake.remove();
 			    grid.set(EMPTY, tail.x, tail.y);
 			    tail.x = nx;
 			    tail.y = ny;
-			    grid.set(SNAKE, tail.x, tail.y);
+			    if (grid.get(nx, ny) == PICKUP)
+			    {
+			        grid.set(PICKUP, nx, ny);
+			    }
+
+			    else
+			    {
+			        grid.set(SNAKE, tail.x, tail.y);
+			    }
 			    snake.insert(tail.x, tail.y);
 			}
 		}
